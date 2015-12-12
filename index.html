@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+
+<!-- d3 -->
+<script src="//d3js.org/d3.v3.min.js"></script>
+
+<!-- jquery -->
+<script type="text/javascript" src="https://s3.amazonaws.com/duhaime-shakespeare/js/jquery-1.7.2.min.js"></script>
+
+<!-- Words Spoken by Character Entrance Plot -->
+<style>
+#characterWords {
+  display: flex;
+  font: 13px sans-serif;
+}
+
+#characterWords .axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+#characterWords .dot {
+  stroke: #000;
+}
+
+#characterWords .tooltip {
+  position: absolute;
+  pointer-events: none;
+}
+</style>
+<div id="characterWords"></div>
+<script>
+
+var margin = {top: 20, right: 20, bottom: 50, left: 75},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var x = d3.scale.linear()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var color = d3.scale.ordinal()
+  .range(["#17becf", "#d62728"]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var tooltip = d3.select("#characterWords").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 1);
+
+var svg = d3.select("#characterWords").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.json("https://s3.amazonaws.com/duhaime-shakespeare/words_by_entrance.json", function(error, data) {
+  if (error) throw error;
+
+  x.domain(d3.extent(data, function(d) { return d.entrance; })).nice();
+  y.domain(d3.extent(data, function(d) { return d.words; })).nice();
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width/2 + 160)
+      .attr("y", +45)
+      .style("text-anchor", "end")
+      .text("Words spoken before character enters play")
+      .style("font-size","16px");
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", -60)
+      .attr("x", -100)
+      .style("text-anchor", "end")
+      .text("Words spoken by character")
+      .style("font-size", "16px");
+
+  svg.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r", 3.5)
+      .attr("cx", function(d) { return x(d.entrance); })
+      .attr("cy", function(d) { return y(d.words); })
+      .style("opacity", .9)
+      .style("fill", function(d) { return color(d.gender); })
+      .on("mouseover", function(d) {
+          tooltip.transition()
+          .duration(200)
+          .style("opacity", .96);  
+          tooltip.html(d.name + " (" + d.play + ")") 
+                   .style("left", (parseInt(d3.select(this).attr("cx")) + 
+                        document.getElementById("characterWords").offsetLeft) +78 + "px")     
+                   .style("top", (parseInt(d3.select(this).attr("cy")) +
+                        document.getElementById("characterWords").offsetTop) +5 + "px") 
+                   .style("background-color", '#ffffff')
+                   .style("width", 8.75 * (d.name.length + d.play.length + 2) + "px")
+                   .style("height", 15 + "px"); 
+          })
+          .on("mouseout", function(d) {
+              tooltip.transition()
+                   .duration(500)
+                   .style("opacity", 0);
+          });    
+ 
+  var legend = svg.selectAll(".legend")
+      .data(color.domain())
+    .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+  legend.append("rect")
+      .attr("x", width - 18)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", color);
+
+  legend.append("text")
+      .attr("x", width - 24)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(function(d) { 
+        if (d === 1) {
+          return "male";
+        } else {
+        if (d === 2) {
+          return "female";
+          }
+        } 
+      });
+});
+
+</script>
+
+
+
+<!-- Character Cooccurrence Plot -->
+
+<style>
+#cooccurrence {
+  display: flex;
+  align-items: center
+  justify-content: center;
+  font-family: sans-serif;
+}
+#cooccurrence .background {
+  height: 700;
+  width: 700; 
+  fill: #eee;
+}
+#cooccurrence line {
+  stroke: #fff;
+}
+#cooccurrence text.active {
+  fill: red;
+}
+.selection-menu {
+  text-align:center;
+}  
+.play-menu {
+  margin-right: 20px;
+}
+</style>
+<aside class="selection-menu" style="margin-top:20px;">
+    <p>Play:
+        <select class="play-menu form-group select-wrapper form-control" id="selected_json">
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/1H4.json'">Henry_IV_i</option> 
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Ant.json'">Antony_And_Cleopatra</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/MND.json'">Midsummer-Nights_Dream</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/AWW.json'">Alls_Well</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Cor.json'">Coriolanus</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Cym.json'">Cymbeline</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Ham.json'">Hamlet</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/JC.json'">Julius_Caesar</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Lr.json'">King_Lear</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/LLL.json'">Loves_Labours_Lost</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Mac.json'">Macbeth</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/MM.json'">Measure_For_Measure</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Ado.json'">Much_Ado</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Oth.json'">Othello</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Per.json'">Pericles</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Rom.json'">Romeo_And_Juliet</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Err.json'">Comedy_Of_Errors</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Jn.json'">King_John</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/MV.json'">Merchant_Of_Venice</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Wiv.json'">Merry_Wives_Of_Windsor</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Shr.json'">Taming_Of_The_Shrew</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Tmp.json'">Tempest</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/TGV.json'">Two_Gentlemen_Of_Verona</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/TNK.json'">Two_Noble_Kinsmen</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/WT.json'">Winters_Tale</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Tim.json'">Timon_Of_Athens</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Tit.json'">Titus_Andronicus</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/Tro.json'">Troilus_And_Cressida</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/TN.json'">Twelfth_Night</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/R2.json'">King_Richard_II</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/R3.json'">King_Richard_III</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/2H4.json'">Henry_IV_ii</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/H5.json'">King_Henry_V</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/1H6.json'">Henry_VI_i</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/2H6.json'">Henry_VI_ii</option>
+        <option value="'https://s3.amazonaws.com/duhaime-shakespeare/folger-json/3H6.json'">Henry_VI_iii</option>
+    </select>   
+
+    Order:
+        <select id="order">
+            <option value="name">by Name</option>
+            <option value="count">by Frequency</option>
+            <option value="group">by Cluster</option>
+        </select>
+</aside>
+
+<div id="cooccurrence"></div>
+
+<script>
+function select_json(new_json) {
+    // on selection of new json, reset the order dropdown
+    document.getElementById('order').selectedIndex=0;
+
+    var margin = {
+            top: 120,
+            right: 0,
+            bottom: 10,
+            left: 180
+        };
+    var width = 700;
+    var height = 700;
+
+    var x = d3.scale.ordinal().rangeBands([0, width]),
+        z = d3.scale.linear().domain([0, 4]).clamp(true),
+        c = ["#17becf", "#bcbd22","#d62728", "#9467bd","#ff7f0e","#1f77b4","#e377c2"];  
+ 
+    var svg = d3.select("#cooccurrence").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .attr("preserveAspectRatio", "xMidYMid meet")
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");    
+    
+        // Based on the user-selected input text above, make the appropriate api call and retrieve the json 
+        d3.json(new_json, function(play_object) {
+            var matrix = [],
+                nodes = play_object.nodes,
+                n = nodes.length;
+
+            // Compute index per node.
+            nodes.forEach(function(node, i) {
+                node.index = i;
+                node.count = 0;
+                matrix[i] = d3.range(n).map(function(j) {
+                    return {
+                        x: j,
+                        y: i,
+                        z: 0
+                    };
+                });
+            });
+
+            // Convert links to matrix; count character occurrences.
+            play_object.links.forEach(function(link) {
+                matrix[link.source][link.target].z += link.value;
+                matrix[link.target][link.source].z += link.value;
+                matrix[link.source][link.source].z += link.value;
+                matrix[link.target][link.target].z += link.value;
+                nodes[link.source].count += link.value;
+                nodes[link.target].count += link.value;
+            });
+
+            // Precompute the orders.
+            var orders = {
+                name: d3.range(n).sort(function(a, b) {
+                    return d3.ascending(nodes[a].name, nodes[b].name);
+                }),
+                count: d3.range(n).sort(function(a, b) {
+                    return nodes[b].count - nodes[a].count;
+                }),
+                group: d3.range(n).sort(function(a, b) {
+                    return nodes[b].group - nodes[a].group;
+                })
+            };
+
+            // The default sort order.
+            x.domain(orders.name);
+
+            svg.append("rect")
+                .attr("class", "background")
+                .attr("width", width)
+                .attr("height", height);
+
+            var row = svg.selectAll(".row")
+                .data(matrix)
+                .enter().append("g")
+                .attr("class", "row")
+                .attr("transform", function(d, i) {
+                    return "translate(0," + x(i) + ")";
+                })
+                .each(row);
+
+            row.append("line")
+                .attr("x2", width);
+
+            row.append("text")
+                .attr("x", -6)
+                .attr("y", x.rangeBand() / 2)
+                .attr("dy", ".32em")
+                .attr("text-anchor", "end")
+                .text(function(d, i) {
+                    return nodes[i].name;
+                });
+
+            var column = svg.selectAll(".column")
+                .data(matrix)
+                .enter().append("g")
+                .attr("class", "column")
+                .attr("transform", function(d, i) {
+                    return "translate(" + x(i) + ")rotate(-90)";
+                });
+
+            column.append("line")
+                .attr("x1", -width);
+
+            column.append("text")
+                .attr("x", 6)
+                .attr("y", x.rangeBand() / 2)
+                .attr("dy", ".32em")
+                .attr("text-anchor", "start")
+                .text(function(d, i) {
+                    return nodes[i].name;
+                });
+
+            function row(row) {
+                var cell = d3.select(this).selectAll(".cell")
+                    .data(row.filter(function(d) {
+                        return d.z;
+                    }))
+                    .enter().append("rect")
+                    .attr("class", "cell")
+                    .attr("x", function(d) {
+                        return x(d.x);
+                    })
+                    .attr("width", x.rangeBand())
+                    .attr("height", x.rangeBand())
+                    .style("fill-opacity", function(d) {
+                        return z(d.z);
+                    })
+                    .style("fill", function(d) {
+                        return nodes[d.x].group == nodes[d.y].group ? c[nodes[d.x].group] : null;
+                    })
+                    .on("mouseover", mouseover)
+                    .on("mouseout", mouseout);
+            }
+
+            function mouseover(p) {
+                d3.selectAll(".row text").classed("active", function(d, i) {
+                    return i == p.y;
+                });
+                d3.selectAll(".column text").classed("active", function(d, i) {
+                    return i == p.x;
+                });
+            }
+
+            function mouseout() {
+                d3.selectAll("text").classed("active", false);
+            }
+
+            d3.select("#order").on("change", function() {
+                clearTimeout(timeout);
+                order(this.value);
+            });
+
+            function order(value) {
+                x.domain(orders[value]);
+
+                var t = svg.transition().duration(2500);
+
+                t.selectAll(".row")
+                    .delay(function(d, i) {
+                        return x(i) * 4;
+                    })
+                    .attr("transform", function(d, i) {
+                        return "translate(0," + x(i) + ")";
+                    })
+                    .selectAll(".cell")
+                    .delay(function(d) {
+                        return x(d.x) * 4;
+                    })
+                    .attr("x", function(d) {
+                        return x(d.x);
+                    });
+
+                t.selectAll(".column")
+                    .delay(function(d, i) {
+                        return x(i) * 4;
+                    })
+                    .attr("transform", function(d, i) {
+                        return "translate(" + x(i) + ")rotate(-90)";
+                    });
+            }
+
+            var timeout = setTimeout(function() {
+                order("group");
+                d3.select("#order").property("selectedIndex", 2).node().focus();
+            }, 50000000);
+    });
+}
+
+// set initial json selection
+select_json("https://s3.amazonaws.com/duhaime-shakespeare/folger-json/1H4.json");
+    
+// handle on click event
+d3.select('#selected_json').on('change', function() {
+
+    // erase old image
+    d3.select("#cooccurrence").select("svg").remove(); 
+    
+    var new_json = eval(d3.select(this).property('value'));
+    select_json(new_json);
+});
+</script>
+
+
+
