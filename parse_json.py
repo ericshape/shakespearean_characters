@@ -69,15 +69,24 @@ def write_vals(d):
         entrance_json = []
         # generate play-level statistics df
         for play in d:
-
-            if play == "Tmp.json":
-                print d[play]
-
             for gender in d[play]:
                 for feature in d[play][gender]:
                     max_obs = max(d[play][gender][feature], key=lambda x:x['val'])
                     min_obs = min(d[play][gender][feature], key=lambda x:x['val'])
 
+                    # In the event of tie for high and low assign one tie 
+                    # member to high and one to low (unless it's a one-character tie)
+                    if min_obs == max_obs:
+                        for character in d[play][gender][feature]:
+                            if character["val"] == max_obs["val"]:
+                                if character["name"] != max_obs["name"]:
+                                    print "There was a tie between", min_obs, max_obs,
+                                    print "for feature", feature, "in", play,
+                                    print "assigning", character, "to max and", min_obs,"to min"
+                                    print "\n"
+                                    max_obs = character
+                                                            
+   
                     stat_out.write("\t".join(str(v) for v in [play, gender, feature, max_obs["val"], min_obs["val"]]) + "\n")
                               
                     if feature == "words":
