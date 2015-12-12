@@ -46,58 +46,61 @@ def character_attributes(play_nodes):
                 # write character-level json of words spoken and entrances
                 json.dump(nodes_list, json_out)
     
-def play_attributes(play_nodes):
+def generate_attribute_dict(play_nodes):
     """Write df and json for play-level character attributes"""
     # collect stats from each character to assemble play-level insights
     d = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-    d2 = defaultdict(lambda: defaultdict(lambda: defaultdict(list))) 
     for play in play_nodes:
         nodes = play_nodes[play]
         for n in nodes:
             if n["gender"] == 3:
                 continue
+            d[os.path.basename(play)][n["gender"]]["entrance"].append(
+                {"val": n["entrance"], "name": n["name"]})
+            d[os.path.basename(play)][n["gender"]]["words"].append(
+                {"val": n["words"], "name": n["name"]})
+    return d
 
-            d[os.path.basename(play)][n["gender"]]["entrance"].append(n["entrance"])
-            d[os.path.basename(play)][n["gender"]]["words"].append(n["words"])
-            d2[os.path.basename(play)][n["gender"]]["entrance"].append(
-                {"name":n["name"],"entrance": n["entrance"]})
-            d2[os.path.basename(play)][n["gender"]]["words"].append(
-                {"name":n["name"],"entrance":n["words"]})
-       
-    min_max_json_list = []
+def write_vals(d):
+    """Write play-level characteristics of character-level properties"""
+    stats_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict())))
     with open("high-level-stats",'w') as stat_out: 
+        words_json = []
+        entrance_json = []
         # generate play-level statistics df
         for play in d:
+
+            if play == "Tmp.json":
+                print d[play]
+
             for gender in d[play]:
-                mean_entrance = ( sum(d[play][gender]["entrance"]) 
-                    / len(d[play][gender]["entrance"]) )
-                min_entrance = min(d[play][gender]["entrance"])
-                max_entrance = max(d[play][gender]["entrance"])     
-                mean_words = ( sum(d[play][gender]["words"]) 
-                    / len(d[play][gender]["words"]) )
-                min_words = min(d[play][gender]["words"])
-                max_words = max(d[play][gender]["words"])
-                vals_to_write = [os.path.basename(play), gender, mean_entrance, 
-                    min_entrance, max_entrance, mean_words, min_words, max_words]
-                stat_out.write("\t".join(str(v) for v in vals_to_write) + "\n")
-   
-                for character_dict in d2[play][gender]["entrance"]:
-                    if character_dict["entrance"] == min_entrance:
-                        min_char = character_dict
-                    elif character_dict["entrance"] == max_entrance:
-                        max_char = character_dict
+                for feature in d[play][gender]:
+                    max_obs = max(d[play][gender][feature], key=lambda x:x['val'])
+                    min_obs = min(d[play][gender][feature], key=lambda x:x['val'])
 
-                min_max_json_list.append( {"play":play.replace(".json",""),
-                    "gender":gender,
-                    "min":{"name":min_char["name"],"val":min_char["entrance"]},
-                    "max":{"name":max_char["name"],"val":max_char["entrance"]}}
-                )
+                    stat_out.write("\t".join(str(v) for v in [play, gender, feature, max_obs["val"], min_obs["val"]]) + "\n")
+                              
+                    if feature == "words":
+                        words_json.append({"gender": gender,
+                        "play": play,
+                        "max": {"val": max_obs["val"], "name": max_obs["name"]},
+                        "min": {"val": min_obs["val"], "name": min_obs["name"]}})
+                        
+                    elif feature == "entrance":
+                        entrance_json.append({"gender": gender,
+                        "play": play,
+                        "max": {"val": max_obs["val"], "name": max_obs["name"]},
+                        "min": {"val": min_obs["val"], "name": min_obs["name"]}})
+                
+        with open("min_max_words.json",'w') as words_json_out:
+            json.dump(words_json, words_json_out)
+        with open("min_max_entrance.json",'w') as entrance_json_out:
+            json.dump(entrance_json, entrance_json_out)
 
-    with open("min_max_words.json",'w') as min_max_words_out:
-        json.dump(min_max_json_list, min_max_words_out) 
-     
 if __name__ == "__main__":
             
     play_nodes = retrieve_nodes()
     character_attributes(play_nodes)
-    play_attributes(play_nodes)    
+    d = generate_attribute_dict(play_nodes)   
+    write_vals(d)
+
