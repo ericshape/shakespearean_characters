@@ -2,7 +2,7 @@
 
 This repo contains utilities used to collect and visualize data on Shakespeare's characters. 
 
-`utils/shakespearean-networks.py` requires the Folger Shakespeare Digital Texts collection of [Shakespeare XML]("http://www.folgerdigitaltexts.org/"). Once those files are downloaded and unzipped, one should specify a glob path to the XML directory in the following line:
+`utils/shakespearean-networks.py` requires the Folger Shakespeare Digital Texts collection of [Shakespeare XML](http://www.folgerdigitaltexts.org/). Once those files are downloaded and unzipped, one should specify a glob path to the XML directory in the following line:
 
 `folger_xml_path = "./XML/*.xml"`
 
