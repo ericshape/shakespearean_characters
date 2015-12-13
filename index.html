@@ -277,8 +277,8 @@ d3.json("https://s3.amazonaws.com/duhaime-shakespeare/min_max_entrance.json", fu
           .duration(200)
           .style("opacity", .96);  
           var currentGender = d.gender;
-          tooltip.html("first: " + d.min["name"] + "</br>" +
-                   "last: " + d.max["name"]) 
+          tooltip.html("first to enter: " + d.min["name"] + "</br>" +
+                   "last to enter: " + d.max["name"]) 
                .style("left", (parseInt(d3.select(this).attr("dx")) + 
                     document.getElementById(vizDivStr).offsetLeft) +97 + "px")     
                .style("top", (parseInt(d3.select(this).attr("dy")) +
@@ -555,20 +555,25 @@ d3.json("https://s3.amazonaws.com/duhaime-shakespeare/min_max_words.json", funct
     </select>   
 
     Order:
-        <select id="order">
-            <option value="name">by Name</option>
-            <option value="count">by Frequency</option>
-            <option value="group">by Cluster</option>
-        </select>
+    <select id="order">
+        <option value="name">by Name</option>
+        <option value="count">by Frequency</option>
+        <option value="group">by Cluster</option>
+        <option value="gender">by Gender</option>
+    </select>
+    
+    Color:
+    <select id="colorDropdown">
+        <option value="gender">by Gender</option>
+        <option value="cluster">by Cluster</option>
+    </select>
+
 </aside>
 
 <div id="cooccurrence"></div>
 
 <script async>
 function select_json(new_json) {
-    // on selection of new json, reset the order dropdown
-    document.getElementById('order').selectedIndex=0;
-
     var margin = {
             top: 120,
             right: 0,
@@ -580,7 +585,7 @@ function select_json(new_json) {
 
     var x = d3.scale.ordinal().rangeBands([0, width]),
         z = d3.scale.linear().domain([0, 4]).clamp(true),
-        c = ["#17becf", "#bcbd22","#d62728", "#9467bd","#ff7f0e","#1f77b4","#e377c2"];  
+        c = ["#9467bd", "#17becf", "#d62728", "#bcbd22", "#ff7f0e", "#1f77b4", "#e377c2"];  
  
     var svg = d3.select("#cooccurrence").append("svg")
         .attr("width", width + margin.left + margin.right)
@@ -628,12 +633,31 @@ function select_json(new_json) {
                 }),
                 group: d3.range(n).sort(function(a, b) {
                     return nodes[b].group - nodes[a].group;
+                }),
+                gender: d3.range(n).sort(function(a, b) {
+                    return nodes[b].gender - nodes[a].gender;
                 })
             };
 
-            // The default sort order.
-            x.domain(orders.name);
+            // Use currently selected value of the orders dropdown
+            // to determine the current sort choice 
+            var orderValue = d3.select("#order").property("value");
+            console.log(orderValue);
+            if (orderValue === "name"){
+                x.domain(orders.name);
+            } else if (orderValue === "count"){
+                x.domain(orders.count);
+            } else if (orderValue === "group"){
+                x.domain(orders.group);
+            } else if (orderValue === "gender"){
+                x.domain(orders.gender);
+            };
 
+
+            // Use currently selected value of the color dropdown
+            // to determine the current sort choice 
+            var colorValue = d3.select("#colorDropdown").property("value"); 
+           
             svg.append("rect")
                 .attr("class", "background")
                 .attr("width", width)
@@ -680,7 +704,7 @@ function select_json(new_json) {
                     return nodes[i].name;
                 });
 
-            function row(row) {
+            function row(row) { 
                 var cell = d3.select(this).selectAll(".cell")
                     .data(row.filter(function(d) {
                         return d.z;
@@ -696,7 +720,11 @@ function select_json(new_json) {
                         return z(d.z);
                     })
                     .style("fill", function(d) {
-                        return nodes[d.x].group == nodes[d.y].group ? c[nodes[d.x].group] : null;
+                        if (colorValue === "gender") {
+                            return nodes[d.x].gender == nodes[d.y].gender ? c[nodes[d.x].gender] : null;
+                        } else {
+                            return nodes[d.x].group == nodes[d.y].group ? c[nodes[d.x].group] : null;
+                        }
                     })
                     .on("mouseover", mouseover)
                     .on("mouseout", mouseout);
@@ -757,17 +785,32 @@ function select_json(new_json) {
 }
 
 // set initial json selection
-select_json("https://s3.amazonaws.com/duhaime-shakespeare/folger-json/1H4.json");
+select_json("https://s3.amazonaws.com/duhaime-shakespeare/folger-json/1H4.json", 0);
     
 // handle on click event
 d3.select('#selected_json').on('change', function() {
 
     // erase old image
     d3.select("#cooccurrence").select("svg").remove(); 
+
+    var new_json = d3.select(this).property('value');
     
-    var new_json = eval(d3.select(this).property('value'));
-    select_json(new_json);
+    // on selection of new json, reset the order dropdown
+    //document.getElementById('order').selectedIndex=0;
+    
+    console.log(new_json);
+    select_json(new_json.slice(1, new_json.length-1));
 });
+
+
+d3.select("#colorDropdown").on("change", function() {
+    var colorIndex = this.selectedIndex; 
+    var current_json = d3.select("#selected_json").property("value");
+    console.log(colorIndex, current_json, eval(current_json));
+    d3.select("#cooccurrence").select("svg").remove();
+    select_json(current_json.slice(1, current_json.length-1));
+});
+
 </script>
 
 
