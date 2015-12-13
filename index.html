@@ -25,6 +25,7 @@
 #characterWords .tooltip {
   position: absolute;
   pointer-events: none;
+  color: #000000;
 }
 </style>
 <div id="characterWords"></div>
@@ -188,6 +189,7 @@ d3.json("https://s3.amazonaws.com/duhaime-shakespeare/words_by_entrance.json", f
 #minMaxEntrance .tooltip {
   position: absolute;
   pointer-events: none;
+  color: #000000;
 }
 </style>
 
@@ -272,7 +274,6 @@ d3.json("https://s3.amazonaws.com/duhaime-shakespeare/min_max_entrance.json", fu
       .text(function(d) { return d.play; })
       .style("fill",function(d) { return color(d.gender);})
       .on("mouseover", function(d) {
-          console.log(d);
           tooltip.transition()
           .duration(200)
           .style("opacity", .96);  
@@ -348,6 +349,7 @@ d3.json("https://s3.amazonaws.com/duhaime-shakespeare/min_max_entrance.json", fu
 #minMaxWords .tooltip {
   position: absolute;
   pointer-events: none;
+  color: #000000;
 }
 </style>
 
@@ -432,7 +434,6 @@ d3.json("https://s3.amazonaws.com/duhaime-shakespeare/min_max_words.json", funct
       .text(function(d) { return d.play; })
       .style("fill",function(d) { return color(d.gender);})
       .on("mouseover", function(d) {
-          console.log(d);
           tooltip.transition()
           .duration(200)
           .style("opacity", .96);  
@@ -555,7 +556,7 @@ d3.json("https://s3.amazonaws.com/duhaime-shakespeare/min_max_words.json", funct
     </select>   
 
     Order:
-    <select id="order">
+    <select class="play-menu form-group select-wrapper form-control" id="order">
         <option value="name">by Name</option>
         <option value="count">by Frequency</option>
         <option value="group">by Cluster</option>
@@ -642,7 +643,6 @@ function select_json(new_json) {
             // Use currently selected value of the orders dropdown
             // to determine the current sort choice 
             var orderValue = d3.select("#order").property("value");
-            console.log(orderValue);
             if (orderValue === "name"){
                 x.domain(orders.name);
             } else if (orderValue === "count"){
@@ -731,10 +731,10 @@ function select_json(new_json) {
             }
 
             function mouseover(p) {
-                d3.selectAll(".row text").classed("active", function(d, i) {
+                d3.select("#cooccurrence").selectAll(".row text").classed("active", function(d, i) {
                     return i == p.y;
                 });
-                d3.selectAll(".column text").classed("active", function(d, i) {
+                d3.select("#cooccurrence").selectAll(".column text").classed("active", function(d, i) {
                     return i == p.x;
                 });
             }
@@ -798,7 +798,6 @@ d3.select('#selected_json').on('change', function() {
     // on selection of new json, reset the order dropdown
     //document.getElementById('order').selectedIndex=0;
     
-    console.log(new_json);
     select_json(new_json.slice(1, new_json.length-1));
 });
 
@@ -806,12 +805,9 @@ d3.select('#selected_json').on('change', function() {
 d3.select("#colorDropdown").on("change", function() {
     var colorIndex = this.selectedIndex; 
     var current_json = d3.select("#selected_json").property("value");
-    console.log(colorIndex, current_json, eval(current_json));
     d3.select("#cooccurrence").select("svg").remove();
     select_json(current_json.slice(1, current_json.length-1));
 });
 
 </script>
-
-
 
