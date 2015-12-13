@@ -261,8 +261,6 @@ def make_json_dir():
     """If there isn't a directory named "json" in cwd, make one"""
     if not os.path.exists("json"):
         os.makedirs("json")
-    if not os.path.exists("gender_json"):
-        os.makedirs("gender_json")
 
 if __name__ == "__main__":
     # State globals, where cn = clean_names option
