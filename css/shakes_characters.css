@@ -1,0 +1,89 @@
+#characterWords {
+  display: flex;
+  font: 13px sans-serif;
+  height: 500px;
+}
+
+#characterWords .axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+#characterWords .dot {
+  stroke: #000;
+}
+
+#characterWords .tooltip {
+  position: absolute;
+  pointer-events: none;
+  color: #000000;
+}
+
+#minMaxEntrance {
+  display: flex;
+  font: 13px sans-serif;
+  height: 500px;
+}
+
+#minMaxEntrance .axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+#minMaxEntrance .dot {
+  stroke: #000;
+}
+
+#minMaxEntrance .tooltip {
+  position: absolute;
+  pointer-events: none;
+  color: #000000;
+}
+
+#minMaxWords {
+  display: flex;
+  font: 13px sans-serif;
+  height: 500px;
+}
+
+#minMaxWords .axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+#minMaxWords .dot {
+  stroke: #000;
+}
+
+#minMaxWords .tooltip {
+  position: absolute;
+  pointer-events: none;
+  color: #000000;
+}
+
+#cooccurrence {
+  display: flex;
+  align-items: center
+  justify-content: center;
+  font-family: sans-serif;
+}
+#cooccurrence .background {
+  height: 700;
+  width: 700; 
+  fill: #eee;
+}
+#cooccurrence line {
+  stroke: #fff;
+}
+#cooccurrence text.active {
+  fill: red;
+}
+.selection-menu {
+  text-align:center;
+}  
+.play-menu {
+  margin-right: 20px;
+}
